@@ -45,7 +45,6 @@ export class NNModel implements Model {
             const session1 = await InferenceSession.create(onnxAggro, {executionProviders: ['wasm']});
             return new NNModel([session0, session1], false);
         } catch (e) {
-            console.error('Cannot initialize model');
             throw e;
         }
     };

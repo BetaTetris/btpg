@@ -24,6 +24,18 @@ export const TRANSITION_PROBS = [
     [6, 5, 5, 5, 5, 1, 5],
     [5, 5, 5, 5, 6, 5, 1],
 ];
+export const MAX_LINES = 430;
+
+export function generateRandomPiece(piece: number): number {
+    const transition_probs = TRANSITION_PROBS[piece];
+    const random = Math.random() * 32;
+    let sum = 0;
+    for (let i = 0; i < transition_probs.length; i++) {
+        sum += transition_probs[i];
+        if (random < sum) return i;
+    }
+    return 0; // should never happen
+}
 
 // coordinate system is right+down, i.e. lower-indexed rows are higher up
 export class TetrisState {

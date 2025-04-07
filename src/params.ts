@@ -1,6 +1,6 @@
 import { TapSpeed } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
-import { module, PIECE_NAMES, TRANSITION_PROBS } from './tetris';
+import { generateRandomPiece, MAX_LINES, module, PIECE_NAMES, TRANSITION_PROBS } from './tetris';
 import { Select, Checkbox, wrapSelectInField, createNumberSelector } from './components';
 
 export class Parameters {
@@ -12,6 +12,7 @@ export class Parameters {
     private reactionSelect: Select<number>;
     private aggressionSelect: Select<number>;
     private autoEvalCheckbox: Checkbox;
+    private freezeLinesCheckbox: Checkbox;
     get piece(): number {
         return this.pieceSelect.value;
     }
@@ -32,6 +33,9 @@ export class Parameters {
     }
     get autoEval(): boolean {
         return this.autoEvalCheckbox.value;
+    }
+    get freezeLines(): boolean {
+        return this.freezeLinesCheckbox.value;
     }
 
     private setLines(value: number, checkParity: Boolean = true) {
@@ -90,7 +94,7 @@ export class Parameters {
         );
         const lvlField = wrapSelectInField(this.lvlSelect.element, 'Level speed:');
 
-        this.linesInput = createNumberSelector('lines-input', 0, 429, 2, 30);
+        this.linesInput = createNumberSelector('lines-input', 0, MAX_LINES - 1, 2, 30);
         const linesField = wrapSelectInField(this.linesInput, 'Lines:');
 
         gameConfig.appendChild(pieceField);
@@ -163,7 +167,9 @@ export class Parameters {
         modelConfig.appendChild(aggroField);
 
         this.autoEvalCheckbox = new Checkbox('auto-eval', 'Auto evaluate:');
+        this.freezeLinesCheckbox = new Checkbox('freeze-lines', 'Freeze line count:');
         websiteConfig.appendChild(this.autoEvalCheckbox.wrapper);
+        websiteConfig.appendChild(this.freezeLinesCheckbox.wrapper);
     }
 
     public setPiece(piece: number) {
@@ -171,17 +177,7 @@ export class Parameters {
     }
 
     public generateRandomPiece() {
-        const transition_probs = TRANSITION_PROBS[this.piece];
-        const random = Math.random() * 32;
-        let sum = 0;
-        for (let i = 0; i < transition_probs.length; i++) {
-            sum += transition_probs[i];
-            if (random < sum) {
-                this.setPiece(i);
-                return;
-            }
-        }
-        this.setPiece(0);
+        this.setPiece(generateRandomPiece(this.piece));
     }
 
     public changeLineMin(isOdd: Boolean) {
@@ -191,6 +187,6 @@ export class Parameters {
 
     public addLines(lines: number) {
         this.linesInput.min = (this.lines + lines) % 2 ? '1' : '0';
-        this.lines = Math.min(429, this.lines + lines);
+        this.lines = Math.min(MAX_LINES - 1, this.lines + lines);
     }
 };

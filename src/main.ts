@@ -7,7 +7,7 @@ import { Analysis } from './analysis';
 import { NNModel } from './models/nn-model';
 import { Parameters } from './params';
 import { ChangeMode, TetrisPreview } from './preview';
-import { TetrisState } from './tetris';
+import { MAX_LINES, TetrisState } from './tetris';
 import { generateUrl, loadUrlParams } from './url';
 
 // parse URL parameters
@@ -22,9 +22,21 @@ const analysis = new Analysis(state, preview);
 const evalButton = document.getElementById('btn-eval') as HTMLButtonElement;
 const undoButton = document.getElementById('btn-undo') as HTMLButtonElement;
 const shareButton = document.getElementById('btn-share') as HTMLButtonElement;
+const autoPlayButton = document.getElementById('btn-autoplay') as HTMLButtonElement;
 const loadingDiv = document.getElementById('loading')! as HTMLDivElement;
 let model: NNModel | undefined = undefined;
 let evaluating: boolean = false;
+let autoPlay: boolean = false;
+const autoPlayInterval: number = 800; // ms
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const stopAutoPlay = () => {
+    autoPlay = false;
+    autoPlayButton.innerText = 'Autoplay';
+    if (!evaluating) evalButton.disabled = false;
+    preview.clearPreview();
+};
 
 const evaluate = async () => {
     if (model === undefined || evaluating) return;
@@ -36,6 +48,7 @@ const evaluate = async () => {
         loadingDiv.classList.remove('hidden');
         await beforePaint();
         const result = await model.run(state, parameters);
+        result.autoPlay = autoPlay;
         fetch("https://betatetris.adrien.csie.org/query", {
             method: "POST",
             body: JSON.stringify(result),
@@ -47,10 +60,24 @@ const evaluate = async () => {
         analysis.displayResult(result);
     } catch (e) {
         console.error(e);
+        return;
     } finally {
-        evalButton.disabled = false;
+        if (!autoPlay) evalButton.disabled = false;
         loadingDiv.classList.add('hidden');
         evaluating = false;
+    }
+    if (autoPlay) {
+        let interval = autoPlayInterval;
+        if (analysis.reviewHover()) {
+            interval = autoPlayInterval / 2;
+            await sleep(interval);
+        }
+        if (autoPlay && analysis.reviewPlacement()) {
+            await sleep(interval);
+            analysis.doPlacement();
+        } else {
+            stopAutoPlay();
+        }
     }
 };
 
@@ -62,6 +89,7 @@ const initModel = async () => {
         document.getElementById('message-no-webgpu')!.classList.remove('hidden');
     }
     evalButton.disabled = false;
+    autoPlayButton.disabled = false;
     loadingDiv.classList.add('hidden');
     loadingText.innerText = 'Evaluating...';
     evalButton.addEventListener('click', evaluate);
@@ -83,6 +111,18 @@ const main = () => {
         notyf.success('URL copied to clipboard!');
     });
 
+    autoPlayButton.addEventListener('click', () => {
+        if (autoPlay) {
+            stopAutoPlay();
+        } else {
+            autoPlay = true;
+            evalButton.disabled = true;
+            autoPlayButton.innerText = 'Stop';
+            preview.clearPreview();
+            evaluate();
+        }
+    });
+
     preview.onChange = (state, changeMode, placementInfor) => {
         analysis.hideAll();
         if (changeMode == ChangeMode.PLACEMENT) {
@@ -94,8 +134,11 @@ const main = () => {
             } else {
                 parameters.generateRandomPiece();
             }
-            parameters.addLines(placementInfor.lineIncrement);
-            if (parameters.autoEval) evaluate();
+            if (autoPlay && parameters.lines + placementInfor.lineIncrement >= MAX_LINES) {
+                stopAutoPlay();
+            }
+            parameters.addLines(parameters.freezeLines ? 0 : placementInfor.lineIncrement);
+            if (parameters.autoEval || autoPlay) evaluate();
         }
         if (changeMode == ChangeMode.DRAG) return;
         const count = state.board.count();

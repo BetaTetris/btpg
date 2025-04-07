@@ -1,6 +1,6 @@
 import { Position } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
-import { PIECE_NAMES, TRANSITION_PROBS, TetrisState } from './tetris';
+import { PIECE_NAMES, TRANSITION_PROBS, TetrisState, generateRandomPiece } from './tetris';
 
 function scoreText(avg: number, dev: number) {
     const avgInt = Math.round(avg * 100);
@@ -28,6 +28,9 @@ export class Analysis {
     private placementTable: HTMLTableElement;
     private elapsedSection: HTMLDivElement;
     private elapsedNumber: HTMLSpanElement;
+
+    private hoverCell: HTMLTableCellElement | null = null;
+    private placementCell: HTMLTableCellElement | null = null;
 
     private mouseEnterHandler(e: Event) {
         const target = e.target as HTMLTableCellElement;
@@ -119,6 +122,8 @@ export class Analysis {
             this.hoverSection.classList.add('hidden');
             this.adjustmentSection.classList.add('hidden');
             this.placementSection.classList.add('hidden');
+            this.hoverCell = null;
+            this.placementCell = null;
             return;
         }
 
@@ -138,6 +143,7 @@ export class Analysis {
                     const placement = document.createElement('td');
                     placement.classList.add('cell-placement');
                     setPlacementCell(placement, i.position);
+                    this.hoverCell = placement;
                     const row = document.createElement('tr');
                     row.appendChild(placement);
                     this.hoverTable.appendChild(row);
@@ -150,6 +156,7 @@ export class Analysis {
                         const placement = document.createElement('td');
                         placement.classList.add('cell-placement');
                         setPlacementCell(placement, i.position);
+                        if (i.modes.includes('LWT')) this.hoverCell = placement;
                         const row = document.createElement('tr');
                         row.appendChild(modes);
                         row.appendChild(placement);
@@ -164,7 +171,10 @@ export class Analysis {
                 setPlacementCell(this.adjustmentRows[i][2], position, false);
                 this.adjustmentRows[i][3].innerText = scoreText(result.adj_vals[i][1], result.adj_vals[i][2]);
             }
+            const next = generateRandomPiece(piece);
+            this.placementCell = this.adjustmentRows[next][2];
         } else {
+            this.hoverCell = null;
             this.hoverSection.classList.add('hidden');
             this.adjustmentSection.classList.add('hidden');
             this.placementSection.classList.remove('hidden');
@@ -176,6 +186,7 @@ export class Analysis {
                 const placement = document.createElement('td');
                 placement.classList.add('cell-placement');
                 placement.classList.add('cursor-pointer');
+                if (i == 0) this.placementCell = placement;
                 setPlacementCell(placement, result.moves[i].position, true, true);
                 const prob = document.createElement('td');
                 prob.classList.add('cell-probability');
@@ -196,5 +207,26 @@ export class Analysis {
         this.adjustmentSection.classList.add('hidden');
         this.placementSection.classList.add('hidden');
         this.elapsedSection.classList.add('hidden');
+    }
+
+    public reviewHover() {
+        if (!this.hoverCell) return false;
+        this.preview.clearPreview();
+        this.hoverCell.dispatchEvent(new MouseEvent('mouseenter'));
+        return true;
+    }
+
+    public reviewPlacement() {
+        if (!this.placementCell) return false;
+        this.preview.clearPreview();
+        this.placementCell.dispatchEvent(new MouseEvent('mouseenter'));
+        return true;
+    }
+
+    public doPlacement() {
+        if (!this.placementCell) return false;
+        this.preview.clearPreview();
+        this.placementCell.dispatchEvent(new MouseEvent('click'));
+        return true;
     }
 };
