@@ -49,12 +49,12 @@
             <legend>Website Config</legend>
           </fieldset>
           <div class="mt-4">
-            <button id="undo" type="button" disabled="">Undo</button>
-            <button id="eval" type="button" disabled="">Evaluate</button>
+            <button id="btn-undo" type="button" disabled="">Undo</button>
+            <button id="btn-eval" type="button" disabled="">Evaluate</button>
           </div>
-          <div id="loading" class="mt-4">
-            <div class="loader"></div>
-            <span id="loading-text">Loading model...</span>
+          <div class="mt-1">
+            <button id="btn-share" type="button">Share</button>
+            <button id="btn-autoplay" type="button" disabled="">Autoplay</button>
           </div>
           <div class="text-left mt-4 text-sm">
             <div id="message-full-line" class="hidden">⛔ There are filled rows.</div>
@@ -65,6 +65,10 @@
         <div class="w-72 min-w-72">
           <fieldset class="md:min-h-120">
             <legend>Analysis</legend>
+            <div id="loading" class="mt-2">
+              <div class="loader"></div>
+              <span id="loading-text">Loading model...</span>
+            </div>
             <div id="analysis-game-over" class="hidden">
               <div class="my-2">Game Over!</div>
             </div>

@@ -1,17 +1,27 @@
+import 'notyf/notyf.min.css';
+import { Notyf } from 'notyf';
+import * as clipboard from "clipboard-polyfill";
+
 import '../styles/style.css';
 import { Analysis } from './analysis';
 import { NNModel } from './models/nn-model';
 import { Parameters } from './params';
 import { ChangeMode, TetrisPreview } from './preview';
 import { TetrisState } from './tetris';
+import { generateUrl, loadUrlParams } from './url';
 
+// parse URL parameters
+loadUrlParams();
+
+const notyf = new Notyf();
 const state = new TetrisState();
 const board = document.querySelector<HTMLDivElement>('#board-wrapper')!;
 const preview = new TetrisPreview(board, state);
 const parameters = new Parameters(preview);
 const analysis = new Analysis(state, preview);
-const evalButton = document.getElementById('eval') as HTMLButtonElement;
-const undoButton = document.getElementById('undo') as HTMLButtonElement;
+const evalButton = document.getElementById('btn-eval') as HTMLButtonElement;
+const undoButton = document.getElementById('btn-undo') as HTMLButtonElement;
+const shareButton = document.getElementById('btn-share') as HTMLButtonElement;
 const loadingDiv = document.getElementById('loading')! as HTMLDivElement;
 let model: NNModel | undefined = undefined;
 let evaluating: boolean = false;
@@ -66,6 +76,11 @@ const main = () => {
 
     undoButton.addEventListener('click', () => {
         preview.undo();
+    });
+
+    shareButton.addEventListener('click', () => {
+        clipboard.writeText(generateUrl());
+        notyf.success('URL copied to clipboard!');
     });
 
     preview.onChange = (state, changeMode, placementInfor) => {

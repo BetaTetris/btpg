@@ -3,15 +3,13 @@ export class Select<T> {
     get element(): HTMLSelectElement {
         return this.select;
     }
-    private _value: T;
     get value(): T {
-        return this._value;
+        return this.keys[this.select.selectedIndex];
     }
     public onchange: (e: Event, v: T) => void = () => {};
 
     set selectedIndex(i: number) {
         this.select.selectedIndex = i;
-        this._value = this.keys[i];
     }
     get selectedIndex(): number {
         return this.select.selectedIndex;
@@ -51,11 +49,9 @@ export class Select<T> {
         } else {
             this.select.selectedIndex = defaultOption;
         }
-        this._value = keys[this.select.selectedIndex];
         this.select.addEventListener('change', (e: Event) => {
             this.saveValue();
-            this._value = keys[this.select.selectedIndex];
-            this.onchange(e, this._value);
+            this.onchange(e, this.value);
         });
     }
 }

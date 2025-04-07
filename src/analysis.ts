@@ -74,6 +74,7 @@ export class Analysis {
             prob.classList.add('cell-probability');
             const placement = document.createElement('td');
             placement.classList.add('cell-placement');
+            placement.classList.add('cursor-pointer');
             placement.setAttribute('data-next', i.toString());
             placement.addEventListener('mouseenter', this.mouseEnterHandler.bind(this));
             placement.addEventListener('mouseleave', this.mouseLeaveHandler.bind(this));
@@ -174,6 +175,7 @@ export class Analysis {
                 rank.innerText = `${i + 1}`;
                 const placement = document.createElement('td');
                 placement.classList.add('cell-placement');
+                placement.classList.add('cursor-pointer');
                 setPlacementCell(placement, result.moves[i].position, true, true);
                 const prob = document.createElement('td');
                 prob.classList.add('cell-probability');

@@ -21,7 +21,9 @@
   "dependencies": {
     "@datastructures-js/deque": "^1.0.5",
     "@tailwindcss/vite": "^4.0.17",
-    "base64-js": "^1.5.1",
+    "clipboard-polyfill": "^4.1.1",
+    "js-base64": "^3.7.7",
+    "notyf": "^3.10.0",
     "onnxruntime-web": "^1.21.0",
     "tailwindcss": "^4.0.17"
   }

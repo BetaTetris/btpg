@@ -1,7 +1,7 @@
 import { Deque } from '@datastructures-js/deque';
 import { Position } from '../wasm/tetris';
 import { BOARD_HEIGHT, BOARD_WIDTH, TetrisState } from './tetris';
-import * as base64js from 'base64-js';
+import { Base64 } from 'js-base64';
 
 const BLOCK_TYPE = [1, 3, 2, 1, 3, 2, 1];
 const BLOCK_OFFSETS = [
@@ -113,7 +113,7 @@ export class TetrisPreview {
 
         const savedState = localStorage.getItem('tetris-preview-state');
         if (savedState) {
-            this.loadBoardState(base64js.toByteArray(savedState));
+            this.loadBoardState(Base64.toUint8Array(savedState));
             this._onChange(tetris, ChangeMode.LOAD);
         }
         this.history.pushBack(this.getBoardState());
@@ -161,7 +161,7 @@ export class TetrisPreview {
     private _onChange(state: TetrisState, changeMode: ChangeMode, placementInfor?: Record<string, any>) {
         if (changeMode === ChangeMode.RELEASE || changeMode === ChangeMode.PLACEMENT || changeMode === ChangeMode.UNDO) {
             const state = this.getBoardState();
-            localStorage.setItem('tetris-preview-state', base64js.fromByteArray(state));
+            localStorage.setItem('tetris-preview-state', Base64.fromUint8Array(state, true));
             if (changeMode !== ChangeMode.UNDO) {
                 // weird but only built-in way of comparing array equality
                 if (indexedDB.cmp(state, this.history.back()) !== 0) {

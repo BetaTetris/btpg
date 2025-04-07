@@ -5,7 +5,7 @@ import onnxAggro from '../../agents/model-aggro.onnx';
 import { Model } from '../model';
 import { module, PIECE_NAMES, Placement, TetrisState } from '../tetris';
 import { Parameters } from '../params';
-import * as base64js from 'base64-js';
+import { Base64 } from 'js-base64';
 
 env.wasm.wasmPaths = '/btpg/';
 env.wasm.numThreads = 0;
@@ -65,7 +65,7 @@ export class NNModel implements Model {
         }; // prevent changing params while running
 
         const query = {
-            board: base64js.fromByteArray(params.board.toBytes()),
+            board: Base64.encode(params.board.toBytes()),
             piece: params.piece,
             lines: params.lines,
             tapSpeed: params.tapSpeed.value,
