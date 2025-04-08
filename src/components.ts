@@ -48,6 +48,7 @@ export class Select<T> {
             this.select.selectedIndex = parseInt(savedOption);
         } else {
             this.select.selectedIndex = defaultOption;
+            localStorage.setItem('field-' + id, defaultOption.toString());
         }
         this.select.addEventListener('change', (e: Event) => {
             this.saveValue();
@@ -91,27 +92,41 @@ export class Checkbox {
     }
 }
 
-export function createNumberSelector(
-    id: string,
-    min: number,
-    max: number,
-    step: number = 1,
-    defaultValue: number = 0,
-): HTMLInputElement {
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.id = id;
-    input.min = min.toString();
-    input.max = max.toString();
-    input.step = step.toString();
-    const savedValue = localStorage.getItem('field-' + id);
-    if (savedValue !== null) {
-        input.value = savedValue;
-    } else {
-        input.value = defaultValue.toString();
+export class NumberSelector {
+    private input: HTMLInputElement;
+    get element(): HTMLInputElement {
+        return this.input;
     }
-    return input;
-}
+    get value(): number {
+        return parseInt(this.input.value);
+    }
+    set value(v: number) {
+        this.input.value = v.toString();
+        localStorage.setItem('field-' + this.id, this.input.value);
+    }
+
+    constructor(
+        private id: string,
+        min: number,
+        max: number,
+        step: number = 1,
+        defaultValue: number = 0,
+    ) {
+        this.input = document.createElement('input');
+        this.input.type = 'number';
+        this.input.id = id;
+        this.input.min = min.toString();
+        this.input.max = max.toString();
+        this.input.step = step.toString();
+        const savedValue = localStorage.getItem('field-' + id);
+        if (savedValue !== null) {
+            this.input.value = savedValue;
+        } else {
+            this.input.value = defaultValue.toString();
+            localStorage.setItem('field-' + id, defaultValue.toString());
+        }
+    }
+};
 
 export function wrapSelectInField(
     select: HTMLSelectElement | HTMLInputElement,

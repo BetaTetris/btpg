@@ -1,18 +1,20 @@
 import { TapSpeed } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
 import { generateRandomPiece, MAX_LINES, module, PIECE_NAMES, TRANSITION_PROBS } from './tetris';
-import { Select, Checkbox, wrapSelectInField, createNumberSelector } from './components';
+import { Select, Checkbox, wrapSelectInField, NumberSelector } from './components';
 
 export class Parameters {
     private pieceSelect: Select<number>;
     private lvlSelect: Select<number>;
-    private linesInput: HTMLInputElement;
+    private linesInput: NumberSelector;
     private modelSelect: Select<number>;
     private hzSelect: Select<TapSpeed>;
     private reactionSelect: Select<number>;
     private aggressionSelect: Select<number>;
     private autoEvalCheckbox: Checkbox;
     private freezeLinesCheckbox: Checkbox;
+    public scoreCounter: NumberSelector;
+    public lineCounter: NumberSelector;
     get piece(): number {
         return this.pieceSelect.value;
     }
@@ -40,10 +42,9 @@ export class Parameters {
 
     private setLines(value: number, checkParity: Boolean = true) {
         if (checkParity) {
-            value = (value & 0xfffffffe) + (this.linesInput.min == '1' ? 1 : 0);
+            value = (value & 0xfffffffe) + (this.linesInput.element.min == '1' ? 1 : 0);
         }
-        this.linesInput.value = value.toString();
-        this._lines = value;
+        this.linesInput.value = value;
         let level = 19 + ~~((value - 130) / 10);
         if (value < 130) {
             this.lvlSelect.selectedIndex = 0;
@@ -55,14 +56,12 @@ export class Parameters {
         } else {
             this.lvlSelect.selectedIndex = 3;
         }
-        localStorage.setItem('field-lines-input', value.toString());
         this.lvlSelect.saveValue();
         this.preview.setLevel(level);
     }
 
-    private _lines: number = 0;
     get lines(): number {
-        return this._lines;
+        return this.linesInput.value;
     }
     set lines(value: number) {
         this.setLines(value);
@@ -94,8 +93,8 @@ export class Parameters {
         );
         const lvlField = wrapSelectInField(this.lvlSelect.element, 'Level speed:');
 
-        this.linesInput = createNumberSelector('lines-input', 0, MAX_LINES - 1, 2, 30);
-        const linesField = wrapSelectInField(this.linesInput, 'Lines:');
+        this.linesInput = new NumberSelector('lines-input', 0, MAX_LINES - 1, 2, 30);
+        const linesField = wrapSelectInField(this.linesInput.element, 'Lines:');
 
         gameConfig.appendChild(pieceField);
         gameConfig.appendChild(lvlField);
@@ -115,14 +114,14 @@ export class Parameters {
         }
 
         const lineInput = (_: Event) => {
-            this.setLines(parseInt(this.linesInput.value), false);
+            this.setLines(this.linesInput.value, false);
         }
         const lineChange = (_: Event) => {
-            this.setLines(parseInt(this.linesInput.value), true);
+            this.setLines(this.linesInput.value, true);
         }
-        this.linesInput.addEventListener('input', lineInput);
-        this.linesInput.addEventListener('change', lineChange);
-        this.setLines(parseInt(this.linesInput.value), true);
+        this.linesInput.element.addEventListener('input', lineInput);
+        this.linesInput.element.addEventListener('change', lineChange);
+        this.setLines(this.linesInput.value, true);
 
         /// Model config
         this.modelSelect = new Select(
@@ -168,8 +167,14 @@ export class Parameters {
 
         this.autoEvalCheckbox = new Checkbox('auto-eval', 'Auto evaluate:');
         this.freezeLinesCheckbox = new Checkbox('freeze-lines', 'Freeze line count:');
+        this.scoreCounter = new NumberSelector('score-counter', 0, 99999999);
+        this.lineCounter = new NumberSelector('line-counter', 0, 99999);
+        const scoreField = wrapSelectInField(this.scoreCounter.element, 'Score counter:');
+        const lineField = wrapSelectInField(this.lineCounter.element, 'Line counter:');
         websiteConfig.appendChild(this.autoEvalCheckbox.wrapper);
         websiteConfig.appendChild(this.freezeLinesCheckbox.wrapper);
+        websiteConfig.appendChild(scoreField);
+        websiteConfig.appendChild(lineField);
     }
 
     public setPiece(piece: number) {
@@ -181,12 +186,12 @@ export class Parameters {
     }
 
     public changeLineMin(isOdd: Boolean) {
-        this.linesInput.min = isOdd ? '1' : '0';
-        this.linesInput.value = ((this.lines & 0xfffffffe) + (isOdd ? 1 : 0)).toString();
+        this.linesInput.element.min = isOdd ? '1' : '0';
+        this.linesInput.value = (this.lines & 0xfffffffe) + (isOdd ? 1 : 0);
     }
 
     public addLines(lines: number) {
-        this.linesInput.min = (this.lines + lines) % 2 ? '1' : '0';
+        this.linesInput.element.min = (this.lines + lines) % 2 ? '1' : '0';
         this.lines = Math.min(MAX_LINES - 1, this.lines + lines);
     }
 };

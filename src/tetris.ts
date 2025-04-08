@@ -37,6 +37,13 @@ export function generateRandomPiece(piece: number): number {
     return 0; // should never happen
 }
 
+export function lineClearScore(clearType: number, lines: number): number {
+    const linesAfter = lines + clearType;
+    const level = linesAfter < 130 ? 18 : ~~((linesAfter - 130) / 10) + 19;
+    const LINE_CLEAR_SCORES = [0, 40, 100, 300, 1200];
+    return LINE_CLEAR_SCORES[clearType] * (level + 1);
+}
+
 // coordinate system is right+down, i.e. lower-indexed rows are higher up
 export class TetrisState {
     constructor(

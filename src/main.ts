@@ -7,7 +7,7 @@ import { Analysis } from './analysis';
 import { NNModel } from './models/nn-model';
 import { Parameters } from './params';
 import { ChangeMode, TetrisPreview } from './preview';
-import { MAX_LINES, TetrisState } from './tetris';
+import { lineClearScore, MAX_LINES, TetrisState } from './tetris';
 import { generateUrl, loadUrlParams } from './url';
 
 // parse URL parameters
@@ -27,7 +27,6 @@ const loadingDiv = document.getElementById('loading')! as HTMLDivElement;
 let model: NNModel | undefined = undefined;
 let evaluating: boolean = false;
 let autoPlay: boolean = false;
-const autoPlayInterval: number = 800; // ms
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -67,9 +66,10 @@ const evaluate = async () => {
         evaluating = false;
     }
     if (autoPlay) {
-        let interval = autoPlayInterval;
+        const baseInterval = parameters.level == 39 ? 300 : parameters.level == 29 ? 500 : 800;
+        let interval = baseInterval;
         if (analysis.reviewHover()) {
-            interval = autoPlayInterval / 2;
+            interval = baseInterval / 2;
             await sleep(interval);
         }
         if (autoPlay && analysis.reviewPlacement()) {
@@ -107,7 +107,9 @@ const main = () => {
     });
 
     shareButton.addEventListener('click', () => {
-        clipboard.writeText(generateUrl());
+        const url = generateUrl();
+        clipboard.writeText(url);
+        window.history.replaceState('', '', url);
         notyf.success('URL copied to clipboard!');
     });
 
@@ -134,6 +136,9 @@ const main = () => {
             } else {
                 parameters.generateRandomPiece();
             }
+            const scoreDiff = lineClearScore(placementInfor.lineIncrement, parameters.lines);
+            parameters.scoreCounter.value += scoreDiff;
+            parameters.lineCounter.value += placementInfor.lineIncrement;
             if (autoPlay && parameters.lines + placementInfor.lineIncrement >= MAX_LINES) {
                 stopAutoPlay();
             }
@@ -151,9 +156,13 @@ const main = () => {
         if (state.board.numFullLines() > 0) {
             errorFull.classList.remove('hidden');
             evalButton.disabled = true;
+            autoPlayButton.disabled = true;
         } else {
             errorFull.classList.add('hidden');
-            if (changeMode != ChangeMode.LOAD) evalButton.disabled = false;
+            if (changeMode != ChangeMode.LOAD) {
+                evalButton.disabled = false;
+                autoPlayButton.disabled = false;
+            }
         }
         undoButton.disabled = preview.historySize == 1;
     };

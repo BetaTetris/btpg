@@ -6,6 +6,7 @@ const PARAM_KEYS = {
     'hz': 'field-hz-select',
     'reaction': 'field-reaction-select',
     'aggro': 'field-aggro-select',
+    'freeze': 'field-freeze-lines',
     'board': 'tetris-preview-state',
 }
 
