@@ -133,6 +133,9 @@ td.cell-probability {
 td.cell-piece {
   @apply px-1 bg-yellow-800;
 }
+td.cell-piece.cell-piece-next {
+  @apply px-1 text-black bg-yellow-300;
+}
 tr:nth-child(1) > td.cell-rank {
   @apply px-1 text-black bg-yellow-300;
 }
@@ -161,6 +164,9 @@ td.cell-score {
   }
   td.cell-piece {
     @apply px-1 bg-yellow-200;
+  }
+  td.cell-piece.cell-piece-next {
+    @apply px-1 bg-red-400;
   }
   tr:nth-child(1) > td.cell-rank {
     @apply px-1 text-black bg-yellow-300;

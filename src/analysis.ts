@@ -30,6 +30,7 @@ export class Analysis {
     private elapsedNumber: HTMLSpanElement;
 
     private hoverCell: HTMLTableCellElement | null = null;
+    private placementPieceCell: HTMLTableCellElement | null = null;
     private placementCell: HTMLTableCellElement | null = null;
 
     private mouseEnterHandler(e: Event) {
@@ -114,6 +115,8 @@ export class Analysis {
             }
         };
 
+        this.clearNext();
+        this.placementPieceCell = null;
         this.elapsedSection.classList.remove('hidden');
         this.elapsedNumber.innerText = `${Math.round(result.elapsed_time)}`;
         if (result.game_over) {
@@ -172,6 +175,7 @@ export class Analysis {
                 this.adjustmentRows[i][3].innerText = scoreText(result.adj_vals[i][1], result.adj_vals[i][2]);
             }
             const next = generateRandomPiece(piece);
+            this.placementPieceCell = this.adjustmentRows[next][0];
             this.placementCell = this.adjustmentRows[next][2];
         } else {
             this.hoverCell = null;
@@ -209,7 +213,12 @@ export class Analysis {
         this.elapsedSection.classList.add('hidden');
     }
 
+    public clearNext() {
+        if (this.placementPieceCell) this.placementPieceCell.classList.remove('cell-piece-next');
+    }
+
     public reviewHover() {
+        if (this.placementPieceCell) this.placementPieceCell.classList.add('cell-piece-next');
         if (!this.hoverCell) return false;
         this.preview.clearPreview();
         this.hoverCell.dispatchEvent(new MouseEvent('mouseenter'));
@@ -225,6 +234,7 @@ export class Analysis {
 
     public doPlacement() {
         if (!this.placementCell) return false;
+        this.clearNext();
         this.preview.clearPreview();
         this.placementCell.dispatchEvent(new MouseEvent('click'));
         return true;

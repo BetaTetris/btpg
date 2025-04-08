@@ -35,6 +35,7 @@ const stopAutoPlay = () => {
     autoPlayButton.innerText = 'Autoplay';
     if (!evaluating) evalButton.disabled = false;
     preview.clearPreview();
+    analysis.clearNext();
 };
 
 const evaluate = async () => {
