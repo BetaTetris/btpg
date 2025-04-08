@@ -1,6 +1,6 @@
 import { TapSpeed } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
-import { generateRandomPiece, MAX_LINES, module, PIECE_NAMES, TRANSITION_PROBS } from './tetris';
+import { generateRandomPiece, MAX_LINES, module, PIECE_NAMES } from './tetris';
 import { Select, Checkbox, wrapSelectInField, NumberSelector } from './components';
 
 export class Parameters {
