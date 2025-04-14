@@ -31,3 +31,4 @@ __pycache__/
 report_dynamo_export.sarif
 
 emsdk/
+agents/*.onnx
