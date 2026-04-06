@@ -1,187 +1,216 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="assets/apple-touch-icon.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href="assets/favicon-32x32.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href="assets/favicon-16x16.png"
-    />
-    <link rel="manifest" href="/site.webmanifest" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta property="og:title" content="BetaTetris Playground" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://betatetris.github.io/btpg/" />
-    <meta property="og:image" content="https://raw.githubusercontent.com/adrien1018/betatetris-tablebase/main/icon.png" />
-    <meta property="og:description" content="BetaTetris analysis for NES Tetris" />
-    <meta name="google-site-verification" content="9Tcbkw2Lbqfh_dFsVyBpc7JHJf51YGQpa3DdJyAYgXA" />
-    <title>BetaTetris Playground</title>
-  </head>
-  <body class="m-0 flex min-w-80">
-    <div id="app" class="max-w-7xl mb-12 text-center mx-auto">
-      <h1>BetaTetris Playground</h1>
-      <div class="mt-4 gap-4 flex flex-row flex-wrap justify-center">
-        <div class="pt-3 w-68 min-w-68">
-          <div id="board-wrapper"></div>
-          <div class="text-sm hidden sm:block">Shift+drag to edit columns quickly!</div>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta property="og:title" content="BetaTetris Playground" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://betatetris.github.io/btpg/" />
+  <meta property="og:image" content="https://raw.githubusercontent.com/adrien1018/betatetris-tablebase/main/icon.png" />
+  <meta property="og:description" content="BetaTetris analysis for NES Tetris" />
+  <meta name="google-site-verification" content="9Tcbkw2Lbqfh_dFsVyBpc7JHJf51YGQpa3DdJyAYgXA" />
+  <title>BetaTetris Playground</title>
+</head>
+
+<body class="m-0 flex min-w-80">
+  <div id="app" class="max-w-7xl mb-12 text-center mx-auto">
+    <h1>
+      <span class="relative inline-flex items-center">
+        <span>BetaTetris Playground</span>
+        <a href="https://github.com/BetaTetris" target="_blank" rel="noopener noreferrer" aria-label="View on GitHub"
+          class="hidden sm:block absolute left-full ml-6 text-black dark:text-white hover:opacity-70">
+          <i class="fa-brands fa-github text-xl"></i>
+        </a>
+      </span>
+    </h1>
+
+    <div class="mt-4 gap-4 flex flex-row flex-wrap justify-center">
+      <div class="pt-3 w-68 min-w-68">
+        <div id="board-wrapper"></div>
+        <div class="text-sm hidden sm:block">Shift+drag to edit columns quickly!</div>
+      </div>
+      <div id="config" class="w-64 min-w-64">
+        <!-- actual options are added with js -->
+        <fieldset id="game-param-config">
+          <legend>Game Config</legend>
+        </fieldset>
+        <fieldset id="model-param-config">
+          <legend>Model Config</legend>
+        </fieldset>
+        <fieldset id="website-config">
+          <legend>Website Config</legend>
+        </fieldset>
+        <div class="mt-4">
+          <button id="btn-undo" type="button" disabled="">Undo</button>
+          <button id="btn-eval" type="button" disabled="">Evaluate</button>
         </div>
-        <div id="config" class="w-64 min-w-64">
-          <!-- actual options are added with js -->
-          <fieldset id="game-param-config">
-            <legend>Game Config</legend>
-          </fieldset>
-          <fieldset id="model-param-config">
-            <legend>Model Config</legend>
-          </fieldset>
-          <fieldset id="website-config">
-            <legend>Website Config</legend>
-          </fieldset>
-          <div class="mt-4">
-            <button id="btn-undo" type="button" disabled="">Undo</button>
-            <button id="btn-eval" type="button" disabled="">Evaluate</button>
-          </div>
-          <div class="mt-1">
-            <button id="btn-share" type="button">Share</button>
-            <button id="btn-autoplay" type="button" disabled="">Autoplay</button>
-          </div>
-          <div class="text-left mt-4 text-sm">
-            <div id="message-full-line" class="hidden">⛔ There are filled rows.</div>
-            <div id="message-odd-cells" class="hidden">⚠️ The number of filled cells is an odd number.</div>
-            <div id="message-no-webgpu" class="hidden">⚠️ WebGPU is not supported on this browser. Analysis may take longer to run.</div>
-          </div>
+        <div class="mt-1">
+          <button id="btn-share" type="button">Share</button>
+          <button id="btn-autoplay" type="button" disabled="">Autoplay</button>
         </div>
-        <div class="w-72 min-w-72">
-          <fieldset class="md:min-h-120">
-            <legend>Analysis</legend>
-            <div id="loading" class="mt-2">
-              <div class="loader"></div>
-              <span id="loading-text">Loading model...</span>
-            </div>
-            <div id="analysis-game-over" class="hidden">
-              <div class="my-2">Game Over!</div>
-            </div>
-            <div id="analysis-score" class="hidden">
-              <div class="my-2">Scoring potential</div>
-              <table id="analysis-score-table" class="analysis">
-                <tr><td class="cell-score"></td></tr>
-              </table>
-            </div>
-            <div id="analysis-hover" class="hidden">
-              <div id="analysis-hover-title" class="my-2">Good hover positions</div>
-              <table id="analysis-hover-table" class="analysis"></table>
-            </div>
-            <div id="analysis-adjustment" class="hidden">
-              <div class="my-2">Adjustments</div>
-              <table id="analysis-adjustment-table" class="analysis"></table>
-            </div>
-            <div id="analysis-placement" class="hidden">
-              <div class="my-2">Placements</div>
-              <table id="analysis-placement-table" class="analysis"></table>
-            </div>
-            <div id="analysis-elapsed" class="text-sm mt-3 mb-2 hidden">
-              ✅ Analysis finished in <span id="analysis-elapsed-number"></span> ms.
-            </div>
-          </fieldset>
+        <div class="text-left mt-4 text-sm">
+          <div id="message-full-line" class="hidden">⛔ There are filled rows.</div>
+          <div id="message-odd-cells" class="hidden">⚠️ The number of filled cells is an odd number.</div>
+          <div id="message-no-webgpu" class="hidden">⚠️ WebGPU is not supported on this browser. Analysis may take
+            longer to run.</div>
         </div>
       </div>
-      <h2>General Information & Cautions</h2>
-      <div class="text">
-        <ul class="pl-4">
-          <li>Check out the <a href="./stats/">statistics</a> to get an idea of BetaTetris' strength! They can also help you choose an appropriate model and aggression setting.</li>
-          <li>This version of BetaTetris is trained on an 18-start, level 39 double killscreen, and level 49 force stop format. Therefore, the line and level selection will affect each other.</li>
-          <li>
-            There are two models available: Normal and Aggro. The Low aggression setting of the Aggro agent is slightly more aggressive than the High aggression setting of the Normal agent.
-            <ul>
-              <li>The Aggro agent is trained by assigning a game over probability to each burned line. Thus, it tends to play dirty at high aggression settings.</li>
-            </ul>
-          </li>
-          <li>
-            The "Scoring potential" refers to the agent's estimated remaining score and standard deviation (again in the 39-dks 49-halt format), including the line clear caused by the current piece.
-            <ul>
-              <li>The scoring potential values are independent of decision making and serve only as an estimate. Therefore, they are less reliable than the placements, especially on unseen boards.</li>
-            </ul>
-          </li>
-          <li>
-            If the top engine move is an adjustable move, the "Best / Good hover position(s)" and "Adjustments" sections will indicate the pre-adjustment position and the adjustments needed for every possible next piece, respectively. Otherwise, the "Placements" section will indicate the top engine moves.
-            <ul>
-              <li>LMT, LWT, and LAP denote different hover location optimization strategies. LMT minimizes the maximum number of inputs; LWT minimizes the probability-weighted average of the squared number of inputs; LAP minimizes the probability of needing any adjustment.</li>
-            </ul>
-          </li>
-          <li>BetaTetris agent uses an actor-critic algorithm, which means it outputs a move distribution and plays according to the move output (rather than using the evaluation function like StackRabbit). For moves with no adjustments, the "Placement" section shows the probabilities. However, for moves where adjustments are possible, only the top move is shown since it is really hard to define a "rank" of moves in this context.</li>
-          <li>You can hover the mouse over any placement to show a hint on the board. Clicking it will place the piece at that location; if "Auto evaluate" is enabled, the website will also automatically evaluate the updated board.</li>
-          <li>A WebGPU-compatible environment (along with a GPU) can speed up evaluations. The latest versions of Edge, Chrome, and Opera have WebGPU support; Safari and Firefox do not support WebGPU yet.</li>
-          <li>
-            Because the agent is trained using reinforcement learning, it is naturally limited by the boards it has seen during training. As a result, its evaluations will be less accurate on boards it wouldn't naturally play into.
-            <ul>
-              <li>That being said, the generalization ability of neural networks is still impressive. For example, it can fairly consistently clear a killscreen checkerboard 29-4 with 30 hz tapping and no adjustments, despite never having been trained on it!</li>
-            </ul>
-          </li>
-          <li>
-            Due to the nature of neural network (and the weirdness of floating point arithmetic), some of the evaluation results may differ on different computers (or sometimes even different runs on the same environment). However this does not affect the strength at all - the difference only happen when there are multiple moves that has very similar output probability.
-            <ul>
-              <li>Due to the same reason, you may not able to exactly reproduce some of the games in the raw game data in <a href="./stats/">statistics</a>, but the statistics will still be similar.</li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-      <h2>About</h2>
-      <div class="text">
-        <p>
-          BetaTetris, created by Adrien Wu (adrien1018), is an artificial intelligence trained
-          to play NES Tetris. It has achieved several milestones, like winning the
-          first
-          <a href="https://www.twitch.tv/videos/1074130132"
-            >Classic Tetris AI Exhibition</a
-          >, reaching the game crash under
-          <a href="https://www.youtube.com/watch?v=opg3qyBMRis"
-            >very harsh conditions</a
-          >, and becoming the first agent to reach the
-          <a href="https://www.youtube.com/watch?v=yBOfsnBQ5i0">rebirth screen</a>
-          on an unmodified version of the game. Many of these accomplishments
-          required custom fine tuning, meaning BetaTetris isn't technically just
-          one AI, but rather a collection of agents that each excel at a specific
-          task.
-        </p>
-        <p>
-          BetaTetris Playground (this website), created by fractal161 and adrien1018,
-          is a web application interface for the latest version of BetaTetris.
-          You can thus use it to analyze any position with a number of parameters,
-          allowing you to learn by example from a world class Tetris player.
-        </p>
-      </div>
-      <h2>Related</h2>
-      <div class="text">
-        <p>Check out these other cool sites!</p>
-        <ul>
-          <li>
-            <b><a href="https://gregorycannon.github.io/TetrisTrainer/">TetrisTrainer</a></b>:
-            A NES Tetris simulator developed by
-            <a href="https://github.com/GregoryCannon/">Greg Cannon</a> that
-            supports analysis from StackRabbit, an AI he created that leverages a
-            powerful heuristic combined with Monte Carlo Tree Search.
-          </li>
-          <li>
-            <b><a href="https://nestris.org/">nestris.org</a></b>:
-            A NES Tetris website developed by <a href="https://github.com/AnselChang/">Ansel Chang</a>
-            with support for singleplayer and multiplayer games, and can also analyze live games.
-            It's also powered by StackRabbit, but may support BetaTetris analysis in the future.
-          </li>
-        </ul>
+      <div class="w-72 min-w-72">
+        <fieldset class="md:min-h-120">
+          <legend>Analysis</legend>
+          <div id="loading" class="mt-2">
+            <div class="loader"></div>
+            <span id="loading-text">Loading model...</span>
+          </div>
+          <div id="analysis-game-over" class="hidden">
+            <div class="my-2">Game Over!</div>
+          </div>
+          <div id="analysis-score" class="hidden">
+            <div class="my-2">Scoring potential</div>
+            <table id="analysis-score-table" class="analysis">
+              <tr>
+                <td class="cell-score"></td>
+              </tr>
+            </table>
+          </div>
+          <div id="analysis-hover" class="hidden">
+            <div id="analysis-hover-title" class="my-2">Good hover positions</div>
+            <table id="analysis-hover-table" class="analysis"></table>
+          </div>
+          <div id="analysis-adjustment" class="hidden">
+            <div class="my-2">Adjustments</div>
+            <table id="analysis-adjustment-table" class="analysis"></table>
+          </div>
+          <div id="analysis-placement" class="hidden">
+            <div class="my-2">Placements</div>
+            <table id="analysis-placement-table" class="analysis"></table>
+          </div>
+          <div id="analysis-elapsed" class="text-sm mt-3 mb-2 hidden">
+            ✅ Analysis finished in <span id="analysis-elapsed-number"></span> ms.
+          </div>
+        </fieldset>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+    <h2>General Information & Cautions</h2>
+    <div class="text">
+      <ul class="pl-4">
+        <li>Check out the <a href="./stats/">statistics</a> to get an idea of BetaTetris' strength! They can also help
+          you choose an appropriate model and aggression setting.</li>
+        <li>This version of BetaTetris is trained on an 18-start, level 39 double killscreen, and level 49 force stop
+          format. Therefore, the line and level selection will affect each other.</li>
+        <li>
+          There are two models available: Normal and Aggro. The Low aggression setting of the Aggro agent is slightly
+          more aggressive than the High aggression setting of the Normal agent.
+          <ul>
+            <li>The Aggro agent is trained by assigning a game over probability to each burned line. Thus, it tends to
+              play dirty at high aggression settings.</li>
+          </ul>
+        </li>
+        <li>
+          The "Scoring potential" refers to the agent's estimated remaining score and standard deviation (again in the
+          39-dks 49-halt format), including the line clear caused by the current piece.
+          <ul>
+            <li>The scoring potential values are independent of decision making and serve only as an estimate.
+              Therefore, they are less reliable than the placements, especially on unseen boards.</li>
+          </ul>
+        </li>
+        <li>
+          If the top engine move is an adjustable move, the "Best / Good hover position(s)" and "Adjustments" sections
+          will indicate the pre-adjustment position and the adjustments needed for every possible next piece,
+          respectively. Otherwise, the "Placements" section will indicate the top engine moves.
+          <ul>
+            <li>LMT, LWT, and LAP denote different hover location optimization strategies. LMT minimizes the maximum
+              number of inputs; LWT minimizes the probability-weighted average of the squared number of inputs; LAP
+              minimizes the probability of needing any adjustment.</li>
+          </ul>
+        </li>
+        <li>BetaTetris agent uses an actor-critic algorithm, which means it outputs a move distribution and plays
+          according to the move output (rather than using the evaluation function like StackRabbit). For moves with no
+          adjustments, the "Placement" section shows the probabilities. However, for moves where adjustments are
+          possible, only the top move is shown since it is really hard to define a "rank" of moves in this context.</li>
+        <li>You can hover the mouse over any placement to show a hint on the board. Clicking it will place the piece at
+          that location; if "Auto evaluate" is enabled, the website will also automatically evaluate the updated board.
+        </li>
+        <li>A WebGPU-compatible environment (along with a GPU) can speed up evaluations. The latest versions of Edge,
+          Chrome, and Opera have WebGPU support; Safari and Firefox do not support WebGPU yet.</li>
+        <li>
+          Because the agent is trained using reinforcement learning, it is naturally limited by the boards it has seen
+          during training. As a result, its evaluations will be less accurate on boards it wouldn't naturally play into.
+          <ul>
+            <li>That being said, the generalization ability of neural networks is still impressive. For example, it can
+              fairly consistently clear a killscreen checkerboard 29-4 with 30 hz tapping and no adjustments, despite
+              never having been trained on it!</li>
+          </ul>
+        </li>
+        <li>
+          Due to the nature of neural network (and the weirdness of floating point arithmetic), some of the evaluation
+          results may differ on different computers (or sometimes even different runs on the same environment). However
+          this does not affect the strength at all - the difference only happen when there are multiple moves that has
+          very similar output probability.
+          <ul>
+            <li>Due to the same reason, you may not able to exactly reproduce some of the games in the raw game data in
+              <a href="./stats/">statistics</a>, but the statistics will still be similar.
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <h2>About</h2>
+    <div class="text">
+      <p>
+        BetaTetris, created by Adrien Wu (adrien1018), is an artificial intelligence trained
+        to play NES Tetris. It has achieved several milestones, like winning the
+        first
+        <a href="https://www.twitch.tv/videos/1074130132">Classic Tetris AI Exhibition</a>, reaching the game crash
+        under
+        <a href="https://www.youtube.com/watch?v=opg3qyBMRis">very harsh conditions</a>, and becoming the first agent to
+        reach the
+        <a href="https://www.youtube.com/watch?v=yBOfsnBQ5i0">rebirth screen</a>
+        on an unmodified version of the game. Many of these accomplishments
+        required custom fine tuning, meaning BetaTetris isn't technically just
+        one AI, but rather a collection of agents that each excel at a specific
+        task.
+      </p>
+      <p>
+        BetaTetris Playground (this website), created by fractal161 and adrien1018,
+        is a web application interface for the latest version of BetaTetris.
+        You can thus use it to analyze any position with a number of parameters,
+        allowing you to learn by example from a world class Tetris player.
+      </p>
+      <p>
+        Checkout the GitHub repository for <a href="https://github.com/BetaTetris/betatetris-tablebase">BetaTetris</a>
+        and <a href="https://github.com/BetaTetris/btpg">BetaTetris Playground</a> for more details!
+      </p>
+    </div>
+    <h2>Related</h2>
+    <div class="text">
+      <p>Check out these other cool sites!</p>
+      <ul>
+        <li>
+          <b><a href="https://gregorycannon.github.io/TetrisTrainer/">TetrisTrainer</a></b>:
+          A NES Tetris simulator developed by
+          <a href="https://github.com/GregoryCannon/">Greg Cannon</a> that
+          supports analysis from StackRabbit, an AI he created that leverages a
+          powerful heuristic combined with Monte Carlo Tree Search.
+        </li>
+        <li>
+          <b><a href="https://nestris.org/">nestris.org</a></b>:
+          A NES Tetris website developed by <a href="https://github.com/AnselChang/">Ansel Chang</a>
+          with support for singleplayer and multiplayer games, and can also analyze live games.
+          It's also powered by StackRabbit, but may support BetaTetris analysis in the future.
+        </li>
+      </ul>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
