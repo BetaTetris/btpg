@@ -10,9 +10,9 @@ Download the `dist.zip` file from the [Releases](https://github.com/BetaTetris/b
 
 ### Manual build
 
-Clone the repository, then run `npm install` in the root directory. To compile the wasm modules, navigate to the `wasm` directory and run `./build.sh`. This will require Emscripten, which can be installed following the instructions [here](https://emscripten.org/docs/getting_started/downloads.html).
-
-From here, simply run the server in dev mode with `npm run dev`. Alternatively, run `npm run build` to build the website and run the server in production mode with `npm run preview`.
+1. Clone the repository, then run `npm install` in the root directory.
+2. Compile the wasm modules by `./wasm/build.sh`.
+3. Run the server in dev mode with `npm run dev`. Alternatively, run `npm run build && npm run preview` to build the website and run the server in production mode.
 
 ## Acknowledgements
 

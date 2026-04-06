@@ -104,9 +104,9 @@ export class NNModel implements Model {
 
         // feed inputs and run
         const results = await this.sessions[params.model].run(feeds);
-        const pi = results.pi.data;
+        const pi = results.pi.data as Float32Array;
         const pi_rank = results.pi_rank.data;
-        const v = results.v.data;
+        const v = results.v.data as Float32Array;
         const best = new Placement(Number(pi_rank[0]));
         result.eval = Array.from(v);
 

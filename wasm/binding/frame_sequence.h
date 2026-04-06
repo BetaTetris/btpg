@@ -12,4 +12,4 @@ struct AdjItem {
 std::vector<AdjItem> GetBestAdjModes(
     const Board& board, int now_piece,
     int lines, TapSpeed tap_speed, int adj_delay,
-    const PossibleMoves& moves, const std::vector<Position>& adjs);
+    const PossibleMoves& moves, std::vector<Position> adjs);

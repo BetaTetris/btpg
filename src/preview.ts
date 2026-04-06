@@ -176,7 +176,7 @@ export class TetrisPreview {
     public undo() {
         if (this.history.size() <= 1) return;
         this.history.popBack();
-        const state = this.history.back();
+        const state = this.history.back() as Uint8Array;
         this.loadBoardState(state);
         this._onChange(this.tetris, ChangeMode.UNDO);
     }
