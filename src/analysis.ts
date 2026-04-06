@@ -137,6 +137,7 @@ export class Analysis {
             this.placementSection.classList.add('hidden');
             if (result.query.reactionTime == 0) {
                 this.hoverSection.classList.add('hidden');
+                this.hoverCell = null;
             } else {
                 this.hoverSection.classList.remove('hidden');
                 this.hoverTable.innerHTML = '';

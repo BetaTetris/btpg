@@ -25,6 +25,7 @@ export const TRANSITION_PROBS = [
     [5, 5, 5, 5, 6, 5, 1],
 ];
 export const MAX_LINES = 430;
+export const MAX_LINES_PERFECT = 290;
 
 export function generateRandomPiece(piece: number): number {
     const transition_probs = TRANSITION_PROBS[piece];

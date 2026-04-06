@@ -91,6 +91,7 @@ struct TableEntryNoTmpl {
 template <int R, class Entry>
 constexpr int Phase1TableGen(
     Level level, const int taps[], int initial_frame, int initial_rot, int initial_col,
+    int max_lr_taps, int max_ab_taps,
     Entry entries[]) {
   int sz = 0;
   static_assert(R == 1 || R == 2 || R == 4, "unexpected rotations");
@@ -116,6 +117,10 @@ constexpr int Phase1TableGen(
       int rot = (initial_rot + delta_rot) % R;
       int num_lr_tap = abs(col - initial_col);
       int num_ab_tap = delta_rot == 3 ? 1 : delta_rot; // [0,1,2,1]
+      if (num_lr_tap > max_lr_taps || num_ab_tap > max_ab_taps) {
+        cannot_reach[rot][col] = true;
+        continue;
+      }
       int num_tap = std::max(num_ab_tap, num_lr_tap);
       // the frame that this tap occurred; initial_frame if no input
       int start_frame = (num_tap == 0 ? 0 : taps[num_tap - 1]) + initial_frame;
@@ -205,26 +210,29 @@ constexpr int Phase1TableGen(
 template <class Entry>
 constexpr int Phase1TableGen(
     Level level, int R, const int taps[], int initial_frame, int initial_rot, int initial_col,
+    int max_lr_taps, int max_ab_taps,
     Entry entries[]) {
   if (R == 1) {
-    return Phase1TableGen<1>(level, taps, initial_frame, initial_rot, initial_col, entries);
+    return Phase1TableGen<1>(level, taps, initial_frame, initial_rot, initial_col, max_lr_taps, max_ab_taps, entries);
   } else if (R == 2) {
-    return Phase1TableGen<2>(level, taps, initial_frame, initial_rot, initial_col, entries);
+    return Phase1TableGen<2>(level, taps, initial_frame, initial_rot, initial_col, max_lr_taps, max_ab_taps, entries);
   } else {
-    return Phase1TableGen<4>(level, taps, initial_frame, initial_rot, initial_col, entries);
+    return Phase1TableGen<4>(level, taps, initial_frame, initial_rot, initial_col, max_lr_taps, max_ab_taps, entries);
   }
 }
 
 struct Phase1TableNoTmpl {
   std::vector<TableEntryNoTmpl> initial;
   std::vector<std::vector<TableEntryNoTmpl>> adj;
-  constexpr Phase1TableNoTmpl(Level level, int R, int adj_frame, const int taps[]) : initial(40) {
+  Phase1TableNoTmpl() {}
+  Phase1TableNoTmpl(Level level, int R, int adj_frame, const int taps[]) : initial(40) {
     initial.resize(10 * R);
-    initial.resize(Phase1TableGen(level, R, taps, 0, 0, Position::Start.y, initial.data()));
+    int phase_1_taps = adj_frame == 0 ? 0 : 9; // TODO: it is enough for now, but maybe change to a more general scheme?
+    initial.resize(Phase1TableGen(level, R, taps, 0, 0, Position::Start.y, phase_1_taps, std::min(2, phase_1_taps), initial.data()));
     for (auto& i : initial) {
       int frame_start = std::max(adj_frame, taps[i.num_taps]);
       adj.emplace_back(10 * R);
-      adj.back().resize(Phase1TableGen(level, R, taps, frame_start, i.rot, i.col, adj.back().data()));
+      adj.back().resize(Phase1TableGen(level, R, taps, frame_start, i.rot, i.col, 9, 2, adj.back().data()));
     }
   }
 };
@@ -428,7 +436,7 @@ NOINLINE constexpr void SearchTucks(
       Column tuck_lock_positions = (after_tuck_positions + cur) >> 1 & (cur & ~cur >> 1) & ~lock_positions_without_tuck[rot][col];
       while (tuck_lock_positions) {
         int row = ctz(tuck_lock_positions);
-        positions[sz++] = {rot, row, col};
+        positions[sz++] = Position(rot, row, col);
         tuck_lock_positions ^= 1 << row;
       }
     }
@@ -453,7 +461,7 @@ constexpr void CheckOneInitial(
   if (!is_adj && lock_frame > end_frame) {
     can_adj = true;
   } else {
-    positions[sz++] = {entry.rot, lock_row, entry.col};
+    positions[sz++] = Position(entry.rot, lock_row, entry.col);
   }
   int first_tuck_frame = initial_frame + taps[entry.num_taps];
   int last_tuck_frame = std::min(lock_frame, end_frame);
@@ -554,7 +562,7 @@ NOINLINE PossibleMoves MoveSearch(
 class PrecomputedTableTuple {
   const PrecomputedTable tables[3];
  public:
-  constexpr PrecomputedTableTuple(Level level, int adj_frame, const int taps[]) :
+  PrecomputedTableTuple(Level level, int adj_frame, const int taps[]) :
       tables{{level, 1, adj_frame, taps}, {level, 2, adj_frame, taps}, {level, 4, adj_frame, taps}} {}
   const PrecomputedTable& operator[](int R) const {
     switch (R) {

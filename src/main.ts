@@ -7,7 +7,7 @@ import { Analysis } from './analysis';
 import { NNModel } from './models/nn-model';
 import { Parameters } from './params';
 import { ChangeMode, TetrisPreview } from './preview';
-import { lineClearScore, MAX_LINES, TetrisState } from './tetris';
+import { lineClearScore, MAX_LINES, MAX_LINES_PERFECT, TetrisState } from './tetris';
 import { generateUrl, loadUrlParams } from './url';
 
 // parse URL parameters
@@ -140,7 +140,8 @@ const main = () => {
             const scoreDiff = lineClearScore(placementInfor.lineIncrement, parameters.lines);
             parameters.scoreCounter.value += scoreDiff;
             parameters.lineCounter.value += placementInfor.lineIncrement;
-            if (autoPlay && parameters.lines + placementInfor.lineIncrement >= MAX_LINES) {
+            const maxLines = parameters.model == 2 ? MAX_LINES_PERFECT : MAX_LINES;
+            if (autoPlay && parameters.lines + placementInfor.lineIncrement >= maxLines) {
                 stopAutoPlay();
             }
             parameters.addLines(parameters.freezeLines ? 0 : placementInfor.lineIncrement);

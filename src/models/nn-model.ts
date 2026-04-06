@@ -2,8 +2,9 @@
 import { InferenceSession, Tensor, env } from 'onnxruntime-web/all';
 import onnxNormal from '../../agents/model-normal.onnx';
 import onnxAggro from '../../agents/model-aggro.onnx';
+import onnxPerfect from '../../agents/model-perfect.onnx';
 import { Model } from '../model';
-import { module, PIECE_NAMES, Placement, TetrisState } from '../tetris';
+import { module, PIECE_NAMES, Placement, TetrisState, TRANSITION_PROBS } from '../tetris';
 import { Parameters } from '../params';
 import { Base64 } from 'js-base64';
 
@@ -27,6 +28,20 @@ function createONNXTensor(nestedArray: Array<any>, dataType = 'float32') {
     return new Tensor(dataType as any, flattenedArray, shape);
 }
 
+function mixtureEval(evals: number[][], probs: number[]): [number, number, number] {
+    const sum_probs = probs.reduce((a, b) => a + b, 0);
+    let sum_evals = 0;
+    let sum_scores = 0;
+    let sum_var = 0;
+    for (let i = 0; i < evals.length; i++) {
+        const prob = probs[i] / sum_probs;
+        sum_evals += prob * evals[i][0];
+        sum_scores += prob * evals[i][2];
+        sum_var += prob * (evals[i][1] * evals[i][1] + evals[i][2] * evals[i][2]);
+    }
+    return [sum_evals, Math.sqrt(sum_var - sum_scores * sum_scores), sum_scores];
+}
+
 export class NNModel implements Model {
     private constructor(private sessions: Array<InferenceSession>, private _isGPU: Boolean) {}
 
@@ -38,12 +53,14 @@ export class NNModel implements Model {
         try {
             const session0 = await InferenceSession.create(onnxNormal, {executionProviders: ['webgpu']});
             const session1 = await InferenceSession.create(onnxAggro, {executionProviders: ['webgpu']});
-            return new NNModel([session0, session1], true);
+            const session2 = await InferenceSession.create(onnxPerfect, {executionProviders: ['webgpu']});
+            return new NNModel([session0, session1, session2], true);
         } catch (e) {}
         try {
             const session0 = await InferenceSession.create(onnxNormal, {executionProviders: ['wasm']});
             const session1 = await InferenceSession.create(onnxAggro, {executionProviders: ['wasm']});
-            return new NNModel([session0, session1], false);
+            const session2 = await InferenceSession.create(onnxPerfect, {executionProviders: ['wasm']});
+            return new NNModel([session0, session1, session2], false);
         } catch (e) {
             throw e;
         }
@@ -93,35 +110,50 @@ export class NNModel implements Model {
             return result;
         }
 
-        // prepare feeds. use model input names as keys.
-        const feeds = {
-            board: createONNXTensor(state.board),
-            meta: createONNXTensor(state.meta),
-            moves: createONNXTensor(state.moves),
-            move_meta: createONNXTensor(state.move_meta),
-            meta_int: createONNXTensor(state.meta_int, 'int32'),
-        };
+        let best: Placement;
+        let has_adj = false;
+        if (params.reactionTime == 0) {
+            best = new Placement(0, 0, 5);
+            has_adj = true;
+            result.eval = null;
+        } else {
+            // prepare feeds. use model input names as keys.
+            const feeds = {
+                board: createONNXTensor(state.board),
+                meta: createONNXTensor(state.meta),
+                moves: createONNXTensor(state.moves),
+                move_meta: createONNXTensor(state.move_meta),
+                meta_int: createONNXTensor(state.meta_int, 'int32'),
+            };
 
-        // feed inputs and run
-        const results = await this.sessions[params.model].run(feeds);
-        const pi = results.pi.data as Float32Array;
-        const pi_rank = results.pi_rank.data;
-        const v = results.v.data as Float32Array;
-        const best = new Placement(Number(pi_rank[0]));
-        result.eval = Array.from(v);
+            // feed inputs and run
+            const results = await this.sessions[params.model].run(feeds);
+            const pi = results.pi.data as Float32Array;
+            const pi_rank = results.pi_rank.data;
+            const v = results.v.data as Float32Array;
+            best = new Placement(Number(pi_rank[0]));
+            result.eval = Array.from(v);
 
-        const move_mode = state_pair.move_map[best.r][best.x][best.y];
-        if (move_mode == 1) {
-            const moves = [{prob: pi[Number(pi_rank[0])], position: best}];
-            for (let i = 1; i < 5; i++) {
-                const prob = pi[Number(pi_rank[i])];
-                const pos = new Placement(Number(pi_rank[i]));
-                if (prob < 0.001 || state_pair.move_map[pos.r][pos.x][pos.y] != 1) break;
-                moves.push({prob: prob, position: pos});
+            const move_mode = state_pair.move_map[best.r][best.x][best.y];
+            if (move_mode == 1) {
+                const moves = [{prob: pi[Number(pi_rank[0])], position: best}];
+                for (let i = 1; i < 5; i++) {
+                    const prob = pi[Number(pi_rank[i])];
+                    const pos = new Placement(Number(pi_rank[i]));
+                    if (prob < 0.001 || state_pair.move_map[pos.r][pos.x][pos.y] != 1) break;
+                    moves.push({prob: prob, position: pos});
+                }
+                result.adjustment = false;
+                result.moves = moves;
+                has_adj = false;
+            } else if (move_mode == 3) {
+                has_adj = true;
+            } else {
+                throw Error("Invalid move mode");
             }
-            result.adjustment = false;
-            result.moves = moves;
-        } else if (move_mode == 3) {
+        }
+
+        if (has_adj) {
             const adj_state = module.GetStateAllNextPieces(
                 params.board,
                 params.piece,
@@ -141,7 +173,10 @@ export class NNModel implements Model {
             const pi_rank = adj_results.pi_rank.data;
             const v = adj_results.v.data;
             const adj_best = PIECE_NAMES.map((_, i) => new Placement(Number(pi_rank[i * 800])));
-            const adj_vals = PIECE_NAMES.map((_, i) => [v[i], v[i+7], v[i+14]]);
+            const adj_vals = PIECE_NAMES.map((_, i) => [v[i], v[i+7], v[i+14]]) as number[][];
+            if (result.eval === null) {
+                result.eval = mixtureEval(adj_vals, TRANSITION_PROBS[params.piece]);
+            }
 
             const best_premove = module.GetBestAdjModes(
                 params.board,
@@ -155,9 +190,8 @@ export class NNModel implements Model {
             result.adj_best = adj_best;
             result.adj_vals = adj_vals;
             result.best_premove = best_premove;
-        } else {
-            throw Error("Invalid move mode");
         }
+
         params.board.delete();
         const finishTime = performance.now();
         const elapsedTime = finishTime - startTime;

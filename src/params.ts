@@ -1,6 +1,6 @@
 import { TapSpeed } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
-import { generateRandomPiece, MAX_LINES, module, PIECE_NAMES } from './tetris';
+import { generateRandomPiece, MAX_LINES, MAX_LINES_PERFECT, module, PIECE_NAMES } from './tetris';
 import { Select, Checkbox, wrapSelectInField, NumberSelector } from './components';
 
 export class Parameters {
@@ -31,7 +31,7 @@ export class Parameters {
         return this.reactionSelect.value;
     }
     get aggression(): number {
-        return this.aggressionSelect.value;
+        return this.model == 2 ? 0 : this.aggressionSelect.value;
     }
     get autoEval(): boolean {
         return this.autoEvalCheckbox.value;
@@ -84,6 +84,7 @@ export class Parameters {
         const pieceField = wrapSelectInField(this.pieceSelect.element, 'Current piece:');
 
         const LEVELS = [18, 19, 29, 39];
+        const PERFECT_LEVELS = [18, 19, 29];
         this.lvlSelect = new Select(
             'lvl-select',
             LEVELS,
@@ -126,11 +127,25 @@ export class Parameters {
         /// Model config
         this.modelSelect = new Select(
             'model-select',
-            [0, 1],
-            ['Normal', 'Aggro'],
+            [0, 1, 2],
+            ['Normal', 'Aggro', 'Perfect'],
             0,
         );
         const modelField = wrapSelectInField(this.modelSelect.element, 'Model:');
+        this.modelSelect.onchange = (_: Event, model: number) => {
+            if (model == 2) {
+                this.aggressionSelect.element.disabled = true;
+                if (this.linesInput.value >= MAX_LINES_PERFECT) {
+                    this.setLines(MAX_LINES_PERFECT - 2);
+                }
+                this.linesInput.element.max = (MAX_LINES_PERFECT - 1).toString();
+                this.lvlSelect.setOptions(PERFECT_LEVELS, PERFECT_LEVELS.map((lvl) => lvl.toString()));
+            } else {
+                this.aggressionSelect.element.disabled = false;
+                this.linesInput.element.max = (MAX_LINES - 1).toString();
+                this.lvlSelect.setOptions(LEVELS, LEVELS.map((lvl) => lvl.toString()));
+            }
+        }
 
         this.hzSelect = new Select(
             'hz-select',
@@ -159,6 +174,8 @@ export class Parameters {
             2,
         );
         const aggroField = wrapSelectInField(this.aggressionSelect.element, 'Aggression:');
+
+        this.modelSelect.invokeChange();
 
         modelConfig.appendChild(modelField);
         modelConfig.appendChild(hzField);
@@ -192,6 +209,7 @@ export class Parameters {
 
     public addLines(lines: number) {
         this.linesInput.element.min = (this.lines + lines) % 2 ? '1' : '0';
-        this.lines = Math.min(MAX_LINES - 1, this.lines + lines);
+        const maxLines = this.model == 2 ? MAX_LINES_PERFECT : MAX_LINES;
+        this.lines = Math.min(maxLines - 1, this.lines + lines);
     }
 };

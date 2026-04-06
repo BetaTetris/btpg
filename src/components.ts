@@ -25,6 +25,27 @@ export class Select<T> {
         this.select.dispatchEvent(event);
     }
 
+    public setOptions(keys: Array<T>, texts: Array<string>, defaultOption: number = 0) {
+        if (keys.length != texts.length) {
+            throw new Error('keys and texts must have the same length');
+        }
+        const oldIndex = this.select.selectedIndex;
+        this.select.innerHTML = '';
+        for (let i = 0; i < keys.length; i++) {
+            const option = document.createElement('option');
+            option.value = i.toString();
+            option.innerText = texts[i];
+            this.select.appendChild(option);
+        }
+        if (oldIndex >= keys.length) {
+            this.select.selectedIndex = defaultOption;
+        } else {
+            this.select.selectedIndex = oldIndex;
+        }
+        this.saveValue();
+        this.keys = keys;
+    }
+
     constructor(
         id: string,
         private keys: Array<T>,
