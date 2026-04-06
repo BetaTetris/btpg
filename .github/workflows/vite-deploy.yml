@@ -40,7 +40,8 @@ jobs:
       - name: Download models
         run: |
           wget https://github.com/BetaTetris/betatetris-tablebase/releases/download/v1.0.0/model-normal.onnx -O agents/model-normal.onnx && \
-          wget https://github.com/BetaTetris/betatetris-tablebase/releases/download/v1.0.0/model-aggro.onnx -O agents/model-aggro.onnx
+          wget https://github.com/BetaTetris/betatetris-tablebase/releases/download/v1.0.0/model-aggro.onnx -O agents/model-aggro.onnx && \
+          wget https://github.com/BetaTetris/betatetris-tablebase/releases/download/v1.0.0-perfect/model-perfect.onnx -O agents/model-perfect.onnx
       - name: Build
         run: cd wasm && ./build.sh && cd .. && npm run build
       - name: Setup Pages
