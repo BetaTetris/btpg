@@ -25,6 +25,15 @@ const BLOCK_OFFSETS = [
     [[[0, -2], [0, -1], [0, 0], [0, 1]], // I
      [[-2, 0], [-1, 0], [0, 0], [1, 0]]],
 ];
+const NEXT_BOX = [
+    [[1, 1, 1], [0, 1, 0]], // T
+    [[3, 3, 3], [0, 0, 3]], // J
+    [[2, 2, 0], [0, 2, 2]], // Z
+    [[1, 1], [1, 1]], // O
+    [[0, 3, 3], [3, 3, 0]], // S
+    [[2, 2, 2], [2, 0, 0]], // L
+    [[1, 1, 1, 1]], // I
+]
 
 export enum ChangeMode {
     DRAG = 'drag',
@@ -41,6 +50,7 @@ export class TetrisPreview {
     private cells: HTMLTableCellElement[][] = [];
     private cursor: { x: number; y: number } | undefined = undefined;
     private board: HTMLTableElement;
+    private next_box_pieces: HTMLTableElement[] = [];
     private history: Deque<Uint8Array> = new Deque<Uint8Array>;
 
     get historySize() {
@@ -93,6 +103,7 @@ export class TetrisPreview {
         const board = document.createElement('table');
         this.board = board;
         board.classList.add('board');
+        board.classList.add('board-main');
         board.classList.add('level-8');
         for (let i = 0; i < BOARD_HEIGHT; i++) {
             const [row, cells] = createRow(i);
@@ -101,6 +112,40 @@ export class TetrisPreview {
         }
         board.appendChild(createColumnMarks());
         wrapper.appendChild(board);
+
+        const createNextBox = (piece: number) => {
+            const table = document.createElement('table');
+            table.classList.add('board');
+            table.classList.add('board-nb');
+            const piece_table = NEXT_BOX[piece];
+            for (let i = 0; i < piece_table.length; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < piece_table[i].length; j++) {
+                    const cell = document.createElement('td');
+                    cell.classList.add('cell');
+                    let piece_type = piece_table[i][j];
+                    if (piece_type !== 0) {
+                        const block = document.createElement('div');
+                        block.classList.add('block');
+                        cell.classList.add('block-' + piece_type);
+                        cell.appendChild(block);
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+            return table;
+        };
+        const nextbox = document.createElement('div');
+        nextbox.classList.add('next-box');
+        for (let i = 0; i < 7; i++) {
+            const pieceBox = createNextBox(i);
+            pieceBox.classList.add('next-box-piece-' + i);
+            pieceBox.classList.add('hidden');
+            this.next_box_pieces.push(pieceBox);
+            nextbox.appendChild(pieceBox);
+        }
+        wrapper.appendChild(nextbox);
 
         board.addEventListener('mousedown', this.mouseDown.bind(this));
         window.addEventListener('mouseup', this.mouseUp.bind(this));
@@ -358,8 +403,28 @@ export class TetrisPreview {
         this.resetHover();
     }
 
+    private replaceLevel(element: HTMLTableElement, level: number) {
+        const levelClass = 'level-' + (level % 10);
+        element.classList.forEach((cls) => {
+            if (cls.startsWith('level-')) element.classList.remove(cls, levelClass);
+        });
+        element.classList.add(levelClass);
+    }
+
+    public setNextBox(piece: number | null) {
+        this.next_box_pieces.forEach((elem, idx) => {
+            if (idx === piece) {
+                elem.classList.remove('hidden');
+            } else {
+                elem.classList.add('hidden');
+            }
+        });
+    }
+
     public setLevel(level: number) {
-        const levelClass = level % 10;
-        this.board.classList = 'board level-' + levelClass;
+        this.replaceLevel(this.board, level);
+        for (let i = 0; i < this.next_box_pieces.length; i++) {
+            this.replaceLevel(this.next_box_pieces[i], level);
+        }
     }
 }

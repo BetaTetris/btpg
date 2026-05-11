@@ -185,28 +185,53 @@ td.cell-score {
 }
 
 /* game field */
+#board-wrapper {
+  position: relative;
+}
 .board {
   border-spacing: 0px;
   user-select: none;
 }
+.board.board-nb {
+  position: absolute;
+  opacity: 0.7;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
+}
 .board .cell {
-  width: 24px;
-  height: 24px;
   padding: 0px;
 }
-.board .row:nth-child(odd) > .cell:nth-child(odd), .board .row:nth-child(even) > .cell:nth-child(even) {
+.board.board-main .cell {
+  width: 24px;
+  height: 24px;
+}
+.board.board-nb .cell {
+  width: 16px;
+  height: 16px;
+}
+.board.board-main .row:nth-child(odd) > .cell:nth-child(odd), .board.board-main .row:nth-child(even) > .cell:nth-child(even) {
   background-color: #222;
 }
-.board .row:nth-child(odd) > .cell:nth-child(even), .board .row:nth-child(even) > .cell:nth-child(odd) {
+.board.board-main .row:nth-child(odd) > .cell:nth-child(even), .board.board-main .row:nth-child(even) > .cell:nth-child(odd) {
   background-color: #000;
 }
 .board .block {
-  width: 21px;
-  height: 21px;
   background-image: url(/assets/cells/0-1.svg);
   background-repeat: no-repeat;
   margin: auto;
   opacity: 0;
+}
+.board.board-main .block {
+  width: 21px;
+  height: 21px;
+}
+.board.board-nb .block {
+  opacity: 0.8;
+  width: 14px;
+  height: 14px;
 }
 .board.level-0 .block {
   background-image: url(/assets/cells/0-1.svg);
@@ -299,10 +324,10 @@ td.cell-score {
   background-image: url(/assets/cells/9-3.svg);
 }
 
-.board .cell.filled > .block {
+.board.board-main .cell.filled > .block {
   opacity: 1;
 }
-.board .cell:hover > .block, .board .cell.hover > .block {
+.board.board-main .cell:hover > .block, .board.board-main .cell.hover > .block {
   opacity: 0.5 !important;
 }
 .row-mark, .col-mark {
@@ -310,4 +335,12 @@ td.cell-score {
 }
 .row-mark {
   padding-right: 6px;
+}
+.next-box {
+  position: absolute;
+  right: 4px;
+  top: 6px;
+  width: 68px;
+  height: 36px;
+  pointer-events: none;
 }

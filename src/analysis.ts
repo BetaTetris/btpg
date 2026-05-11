@@ -1,6 +1,6 @@
 import { Position } from '../wasm/tetris';
 import { TetrisPreview } from './preview';
-import { PIECE_NAMES, TRANSITION_PROBS, TetrisState, generateRandomPiece } from './tetris';
+import { PIECE_NAMES, TRANSITION_PROBS, TetrisState } from './tetris';
 
 function scoreText(avg: number, dev: number) {
     const avgInt = Math.round(avg * 100);
@@ -30,6 +30,7 @@ export class Analysis {
     private elapsedNumber: HTMLSpanElement;
 
     private hoverCell: HTMLTableCellElement | null = null;
+    private nextPiece: number | null = null;
     private placementPieceCell: HTMLTableCellElement | null = null;
     private placementCell: HTMLTableCellElement | null = null;
 
@@ -49,7 +50,8 @@ export class Analysis {
         if (target.getAttribute('data-x') === null) return;
         const piece = parseInt(target.getAttribute('data-piece')!);
         const next = target.getAttribute('data-next');
-        this.preview.placePiece(piece, getPosition(target), next !== null ? parseInt(next) : undefined);
+        const nextPiece = next !== null ? parseInt(next) : this.nextPiece;
+        this.preview.placePiece(piece, getPosition(target), nextPiece ?? undefined);
     }
 
     constructor(
@@ -175,9 +177,6 @@ export class Analysis {
                 setPlacementCell(this.adjustmentRows[i][2], position, false);
                 this.adjustmentRows[i][3].innerText = scoreText(result.adj_vals[i][1], result.adj_vals[i][2]);
             }
-            const next = generateRandomPiece(piece);
-            this.placementPieceCell = this.adjustmentRows[next][0];
-            this.placementCell = this.adjustmentRows[next][2];
         } else {
             this.hoverCell = null;
             this.hoverSection.classList.add('hidden');
@@ -224,6 +223,19 @@ export class Analysis {
         this.preview.clearPreview();
         this.hoverCell.dispatchEvent(new MouseEvent('mouseenter'));
         return true;
+    }
+
+    public setNext(piece: number | null) {
+        this.nextPiece = piece;
+        if (this.placementPieceCell) this.placementPieceCell.classList.remove('cell-piece-next');
+        if (this.adjustmentSection.classList.contains('hidden')) return;
+        if (piece === null) {
+            this.placementPieceCell = null;
+            return;
+        }
+        this.placementPieceCell = this.adjustmentRows[piece][0];
+        this.placementCell = this.adjustmentRows[piece][2];
+        this.placementPieceCell.classList.add('cell-piece-next');
     }
 
     public reviewPlacement() {

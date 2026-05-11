@@ -7,7 +7,7 @@ import { Analysis } from './analysis';
 import { NNModel } from './models/nn-model';
 import { Parameters } from './params';
 import { ChangeMode, TetrisPreview } from './preview';
-import { lineClearScore, MAX_LINES, MAX_LINES_PERFECT, TetrisState } from './tetris';
+import { generateRandomPiece, lineClearScore, MAX_LINES, MAX_LINES_PERFECT, TetrisState } from './tetris';
 import { generateUrl, loadUrlParams } from './url';
 
 // parse URL parameters
@@ -35,13 +35,18 @@ const stopAutoPlay = () => {
     autoPlayButton.innerText = 'Autoplay';
     if (!evaluating) evalButton.disabled = false;
     preview.clearPreview();
-    analysis.clearNext();
+    preview.setNextBox(null);
+    analysis.setNext(null);
 };
 
 const evaluate = async () => {
     if (model === undefined || evaluating) return;
     evaluating = true;
     const beforePaint = () => new Promise(requestAnimationFrame);
+    const next = generateRandomPiece(parameters.piece);
+    if (autoPlay) {
+        preview.setNextBox(next);
+    }
     try {
         await beforePaint();
         evalButton.disabled = true;
@@ -69,12 +74,17 @@ const evaluate = async () => {
     if (autoPlay) {
         const baseInterval = parameters.level == 39 ? 300 : parameters.level == 29 ? 500 : 800;
         let interval = baseInterval;
+        analysis.setNext(next);
         if (analysis.reviewHover()) {
             interval = baseInterval / 2;
             await sleep(interval);
         }
         if (autoPlay && analysis.reviewPlacement()) {
             await sleep(interval);
+        } else {
+            stopAutoPlay();
+        }
+        if (autoPlay) {
             analysis.doPlacement();
         } else {
             stopAutoPlay();
